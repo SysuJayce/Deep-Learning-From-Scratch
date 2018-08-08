@@ -16,7 +16,7 @@ def main():
     """
     和chapter4的train_neural_network一样，都是利用two_layer_net中的TwoLayer类
     构造神经网络，然后对MNIST的数据集进行预测并计算准确率
-    
+
     但是比chapter4中的实现要方便巧妙得多，因为将每一层设计成一个类，然后在构造
     神经网络的时候就不用管层里面的具体细节，方便构造也方便求梯度
     :return:
