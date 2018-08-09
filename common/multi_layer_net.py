@@ -75,7 +75,8 @@ class MultiLayerNet:
             elif str(weight_init_std).lower() in ('sigmoid', 'xavier'):
                 scale = np.sqrt(1.0 / all_size_list[idx-1])
             else:
-                raise ValueError("weight_init_std wrong.")
+                # raise ValueError("weight_init_std wrong.")
+                scale = 0.01
 
             # 由上述得到的标准差进行初始化
             self.params['W'+str(idx)] = scale * np.random.randn(
