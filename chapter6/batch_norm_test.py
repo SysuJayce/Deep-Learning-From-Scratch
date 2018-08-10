@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from chapter3.mnist import load_mnist
 from common.multi_layer_net_extend import MultiLayerNetExtend
-from common.optimizer import SGD, Adam
+from common.optimizer import SGD
 
 
 def get_batch(train_x, train_label, batch_mask, batch_size, left):
