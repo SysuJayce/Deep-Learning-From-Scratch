@@ -94,8 +94,8 @@ class MultiLayerNetExtend:
                 scale = np.sqrt(2.0 / all_size_list[idx-1])
             elif str(weight_init_std).lower() in ('sigmoid', 'xavier'):
                 scale = np.sqrt(1.0 / all_size_list[idx-1])
-            else:  # 默认情况下使用的高斯分布标准差为0.01
-                scale = 0.01
+            else:
+                scale = weight_init_std
 
             # 初始化每一层的W和b参数
             self.params['W'+str(idx)] = scale * np.random.randn(
