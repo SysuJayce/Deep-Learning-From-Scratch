@@ -15,6 +15,7 @@ from common.gradient import numerical_gradient as ng
 class MultiLayerNetExtend:
     """
     扩展版的全连接的多层神经网络
+    具有L2正则化、Dropout、Batch Normalization的功能
     """
     def __init__(self, input_size, hidden_size_list, output_size,
                  activation='relu', weight_init_std='relu',
