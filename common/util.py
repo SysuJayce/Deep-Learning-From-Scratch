@@ -32,6 +32,6 @@ def shuffle_dataset(x, t):
     :return:
     """
     permutation = np.random.permutation(x.shape[0])  # 打乱下标
-    # 按打乱后的下标提取数据集，然后返回打乱后的新的数据集
+    # 按打乱后的下标调整数据集
     x = x[permutation, :] if x.ndim == 2 else x[permutation, :, :, :]
     t = t[permutation]
