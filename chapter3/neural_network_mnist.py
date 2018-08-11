@@ -9,7 +9,7 @@
 import numpy as np
 import pickle
 
-from chapter3.mnist import load_mnist
+from common.mnist import load_mnist
 from common.functions import sigmoid, softmax
 
 

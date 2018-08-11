@@ -23,8 +23,7 @@ key_file = {  # 训练集和测试集的下载地址(feature和label)
 
 img_size = 784  # 每张图片的大小，当需要返回多维数组的时候用到
 # 数据集保存目录
-dataset_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_dir = os.path.join(dataset_dir, 'data')
+dataset_dir = '../chapter3/data'
 save_path = os.path.join(dataset_dir, 'mnist.pkl')  # pickle文件的保存地址
 
 

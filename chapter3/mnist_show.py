@@ -8,7 +8,7 @@
 
 import numpy as np
 from PIL import Image
-from chapter3.mnist import load_mnist
+from common.mnist import load_mnist
 
 
 def img_show(img_):

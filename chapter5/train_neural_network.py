@@ -8,7 +8,7 @@
 
 import numpy as np
 
-from chapter3.mnist import load_mnist
+from common.mnist import load_mnist
 from chapter5.two_layer_net import TwoLayerNet
 
 

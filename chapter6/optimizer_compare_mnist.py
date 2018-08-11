@@ -8,7 +8,7 @@
 
 import matplotlib.pyplot as plt
 
-from chapter3.mnist import load_mnist
+from common.mnist import load_mnist
 from common.util import smooth_curve
 from common.multi_layer_net import MultiLayerNet
 from common.optimizer import *

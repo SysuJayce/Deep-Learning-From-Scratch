@@ -9,7 +9,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from chapter3.mnist import load_mnist
+from common.mnist import load_mnist
 from chapter4.two_layer_net import TwoLayerNet
 
 
