@@ -94,12 +94,6 @@ class Trainer:
         # 然后把梯度传给优化器，优化器对神经网络参数进行更新
         self.optimizer.update(self.network.params, grads)
 
-        # 计算训练完这一步之后的损失值
-        loss = self.network.loss(batch_x, batch_label)
-        self.train_loss_list.append(loss)
-        if self.verbose:
-            print("train loss: " + str(loss))
-
         # 训练完一个epoch后从数据集和测试集中选取evaluate_sample_num_per_epoch个
         # 样本进行评估：计算采样集的准确率(可能是为了及时监控过拟合情况)
         if self.current_iter % self.iter_per_epoch == 0:
@@ -112,11 +106,12 @@ class Trainer:
             if self.evaluate_sample_num_per_epoch is not None:
                 t = self.evaluate_sample_num_per_epoch
                 # 书上原本是每次都取前t个，我在这里修改成随机取t个
-                batch_mask = np.random.choice(self.train_size, t)
-                train_x_sample = self.train_x[batch_mask]
-                train_label_sample = self.train_label[batch_mask]
-                test_x_sample = self.test_x[batch_mask]
-                test_label_sample = self.test_label[batch_mask]
+                train_batch_mask = np.random.choice(self.train_size, t)
+                train_x_sample = self.train_x[train_batch_mask]
+                train_label_sample = self.train_label[train_batch_mask]
+                test_batch_mask = np.random.choice(self.test_x.shape[0], t)
+                test_x_sample = self.test_x[test_batch_mask]
+                test_label_sample = self.test_label[test_batch_mask]
 
             # 计算评估结果
             train_acc = self.network.accuracy(train_x_sample,
@@ -130,6 +125,12 @@ class Trainer:
                 print("====== epoch: " + str(self.current_epoch) +
                       "   |  train acc: " + str(train_acc) +
                       "   |  test acc: " + str(test_acc) + " ======")
+
+        # 计算训练完这一步之后的损失值
+        loss = self.network.loss(batch_x, batch_label)
+        self.train_loss_list.append(loss)
+        if self.verbose:
+            print("train loss: " + str(loss))
 
         self.current_iter += 1
 
