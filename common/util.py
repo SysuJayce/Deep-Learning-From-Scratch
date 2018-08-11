@@ -35,3 +35,5 @@ def shuffle_dataset(x, t):
     # 按打乱后的下标调整数据集
     x = x[permutation, :] if x.ndim == 2 else x[permutation, :, :, :]
     t = t[permutation]
+
+    return x, t
