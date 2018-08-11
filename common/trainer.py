@@ -135,7 +135,8 @@ class Trainer:
 
     def train(self):
         # 书上没有利用已经有的这个shuffle函数，我觉得可以用上。用于打乱训练集
-        shuffle_dataset(self.train_x, self.train_label)
+        self.train_x, self.train_label = shuffle_dataset(self.train_x,
+                                                         self.train_label)
         for i in range(self.max_iter):  # 训练max_iter次
             self.train_step()
 
