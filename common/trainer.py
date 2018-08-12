@@ -37,9 +37,8 @@ class Trainer:
         self.evaluate_sample_num_per_epoch = evaluate_sample_num_per_epoch
 
         # 可用的优化器
-        optimizer_class_dict = {'sgd': SGD, 'momentum': Momentum,
-                                'nesterov': Nesterov, 'adagrad': AdaGrad,
-                                'rmsprpo': RMSProp, 'adam': Adam}
+        optimizer_class_dict = {'sgd': SGD, 'momentum': Momentum, 'adam': Adam,
+                                'adagrad': AdaGrad, 'rmsprpo': RMSProp}
         # 初始化优化器。根据用户输入来选择对应的优化器，
         # 然后将所需参数以字典形式传入
         self.optimizer = optimizer_class_dict[optimizer.lower()](
