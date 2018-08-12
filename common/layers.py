@@ -7,6 +7,7 @@
 # @Github       : https://github.com/SysuJayce
 
 from common.functions import *
+from common.util import im2col, col2im
 
 
 class ReLU:
@@ -118,7 +119,7 @@ class SoftmaxWithLoss:
             dx[np.arange(batch_size), self.t] -= 1
             dx /= batch_size  # 最后要注意batch训练的话，反向传播需要求平均
 
-        return dx
+        return dx * dout
 
 
 class BatchNormalization:
@@ -302,3 +303,177 @@ class Dropout:
         # 类似ReLu的反向传播：
         # 如果前向传播的时候被屏蔽了，那么在反向传播的时候就停止传播(输出0)
         return dout * self.mask
+
+
+class Convolution:
+    """
+    卷积层
+    """
+    def __init__(self, W, b, stride=1, pad=0):
+        # 初始化卷积层的参数
+        self.W = W  # 滤波器的参数：滤波器个数、通道数、高度、宽度
+        self.b = b  # 偏置：大小为滤波器个数，每个滤波器共用一个偏置
+        self.stride = stride  # 卷积运算的步长
+        # 填充大小(需要在长和高的两个方向都填充)
+        # 例如填充后h -> h + 2 * pad。因为在高度的上面和下面都填充pad个元素
+        self.pad = pad
+
+        # 中间数据：用于反向传播
+        self.x = None
+        self.col = None
+        self.col_W = None
+
+        # 权重参数和偏置参数的梯度
+        self.dW = None
+        self.db = None
+
+    def forward(self, x):
+        # 读取卷积层滤波器的形状：滤波器个数、通道数、高度、宽度
+        FN, C, FH, FW = self.W.shape
+        # 读取输入数据x的形状：
+        # 样本个数(如果是一个batch，就是batch_size)、通道数、高度、宽度
+        N, C, H, W = x.shape
+
+        # 计算卷积输出的高度和宽度(向下取整)：(H + 2pad - FH) / stride + 1
+        out_h = (H + 2 * self.pad - FH) // self.stride + 1
+        out_w = (W + 2 * self.pad - FW) // self.stride + 1
+
+        # 用im2col将输入数据x转换成2维的矩阵
+        col = im2col(x, FH, FW, self.stride, self.pad)
+        # 将滤波器调整为2维矩阵
+        # 注意先将滤波器调整为一行一个，然后转置，变成一列一个，
+        # 如果直接reshape成(-1, FN)的话，一列并不是一个滤波器
+        col_W = self.W.reshape(FN, -1).T
+
+        # 转换后的输入数据x和reshape后的滤波器可以直接用np.dot高速计算
+        # 计算完之后要加上偏置b
+        # 结果为 二维矩阵，大小为(N * out_h * out_w, FN)
+        out = np.dot(col, col_W) + self.b
+        # 最后将计算结果调整回原来的形状：
+        # 先reshape成 N * H * W * C，
+        # 因为im2col中也是调整成一个输出的三个通道连续输出，要保持一致(H, W, C)
+        # 然后转置成 N * C * H * W，因为输入是这样的顺序
+        # **在这里要领会到reshape和transpose顺序不能对调**
+        out = out.reshape(N, out_h, out_w, -1).transpose((0, 3, 1, 2))
+
+        # 记录前向传播的中间结果，将在反向传播中使用
+        self.x = x
+        self.col = col
+        self.col_W = col_W
+
+        return out
+
+    def backward(self, dout):
+        # 读取卷积层滤波器的形状：滤波器个数、通道数、高度、宽度
+        FN, C, FH, FW = self.W.shape
+        # 将上游传来的梯度转置成 N * H * W * C,与im2col的顺序一致
+        # 然后reshape成FN列的二维矩阵
+        dout = dout.transpose((0, 2, 3, 1)).reshape(-1, FN)
+
+        # 偏置b在前向传播的时候是加法，因此直接对列求和，组成偏置b
+        self.db = np.sum(dout, axis=0)
+        # 前向传播方程为：out = col * col_W
+        # col_W的偏导为col，上游是dout
+        # col形状为(N * out_h * out_w, C * FH * FW)，
+        # dout形状为(N * out_h * out_w, FN)，
+        # 因此W的梯度为 dcol_W = col.T * dout
+
+        # **上游传来的貌似都是不动的，因此只能col->col.T**
+        dcol_W = np.dot(self.col.T, dout)
+        # 由于col_W = W.reshape.T，因此反向传播时先T再reshape即可
+        self.dW = dcol_W.T.reshape(FN, C, FH, FW)
+
+        # dcol和dcol_W同理，但是col_W形状为(C * FH * FW, FN)，
+        # 因此是dout * col_W.T
+        dcol = np.dot(dout, self.col_W.T)
+
+        # 卷积层要传给下游的梯度是dx，而col = im2col(x)，因此调用col2im(dcol)即可
+        dx = col2im(dcol, self.x.shape, FH, FW, self.stride, self.pad)
+
+        return dx
+
+
+# TODO
+class Pooling:
+    """
+    最大池化层
+    """
+    def __init__(self, pool_h, pool_w, stride=1, pad=0):
+        # 初始化池化层的高度、宽度、步长、填充个数
+        self.pool_h = pool_h
+        self.pool_w = pool_w
+        self.stride = stride
+        self.pad = pad
+
+        # 前向传播的中间结果，将在反向传播中用到
+        self.x = None
+        self.arg_max = None
+
+    def forward(self, x):
+        N, C, H, W = x.shape  # 输入数据的个数、通道数、高度、宽度
+        # 计算池化层输出的高度和宽度(向下取整)
+        out_h = (H - self.pool_h) // self.stride + 1
+        out_w = (W - self.pool_w) // self.stride + 1
+
+        # 把输入数据x转换成二维矩阵，每一行代表一次池化要用到的元素列表
+        col = im2col(x, self.pool_h, self.pool_w, self.stride, self.pad)
+        # 由于池化是逐个通道进行的，因此需要将输入数据转换成具有池化层大小个列的
+        # 二维矩阵，然后每一行取最大值即可
+        col = col.reshape(-1, self.pool_h * self.pool_w)
+
+        # 按行取最大值，argmax获取的是下标，用于反向传播
+        arg_max = np.argmax(col, axis=1)
+        out = np.max(col, axis=1)  # 按行取最大值
+        """
+        转换成与输入一样的形状：N, C, H, W，
+        N个三维矩阵，每个三维矩阵就是一个图像，
+        有C个通道，每个通道就是一个二维矩阵，
+        也就是说一个图像就是C个H*W的矩阵，然后有N个图像，就是N*C*H*W
+        
+        out = out.reshape(N, C, out_h, out_w)
+        虽然这样结果也是对的，但是为了保持统一，还是先转换成N,H,W,C再转置
+        """
+        out = out.reshape(N, out_h, out_w, C).transpose((0, 3, 1, 2))
+
+        # 保存中间结果
+        self.x = x
+        self.arg_max = arg_max
+
+        return out
+
+    def backward(self, dout):
+        """
+        其实反向传播就是按照前向传播一行行倒推就行了。
+        目的就是求出dx，传给下游。如果本层有参数需要训练，
+        那么还要将该参数的梯度保存起来
+        :param dout:
+        :return:
+        """
+        # 将上游传来的梯度转置成 N * out_h * out_w * C,与im2col的顺序一致
+        # 与forward逆向
+        dout = dout.transpose((0, 2, 3, 1))
+
+        # forward中求np.max，在backward中就反向求dmax
+        pool_size = self.pool_h * self.pool_w  # 一次池化的元素个数
+        # 前向传播时展开后的二维矩阵形状是(-1, pool_size)，
+        # 在反向传播中也要保持形状，把dout拉直成一维数组后增加pool_size列
+        dmax = np.zeros((dout.size, pool_size))
+        # 利用前向传播时记录的中间结果(每行最大值的索引)，
+        # 将上面生成的二维矩阵中每一行最大值的位置填入dout对应的值
+        # dmax其他元素都为0，但是最大值的位置就是dout对应行的最大值。
+
+        # 也就是说，只有最大值所在的位置梯度才能传递下去
+        dmax[np.arange(self.arg_max.size), self.arg_max.flatten()] =\
+            dout.flatten()
+        # dmax调整为 N * H * W * C * pool_size。
+        # 由于forward中将col.reshape(-1, pool_size)，在backward中也要保持形状
+        dmax = dmax.reshape(dout.shape + (pool_size,))
+
+        # 因为col的形状是： N * out_h * out_w, -1
+        # 所以dcol也要调整为一样的形状
+        dcol = dmax.reshape(dmax.shape[0] * dmax.shape[1] * dmax.shape[2], -1)
+        # 由于col = im2col(x)，因此dx = col2im(col)
+        dx = col2im(dcol, self.x.shape, self.pool_h, self.pool_w, self.stride,
+                    self.pad)
+
+        return dx
