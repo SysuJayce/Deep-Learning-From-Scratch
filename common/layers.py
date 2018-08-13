@@ -393,7 +393,6 @@ class Convolution:
         return dx
 
 
-# TODO
 class Pooling:
     """
     最大池化层
