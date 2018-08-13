@@ -58,7 +58,7 @@ def main():
 
 def test():
     # 获取MNIST数据
-    (train_x, train_label), (test_x, test_label) = load_mnist(flatten=False)
+    _, (test_x, test_label) = load_mnist(flatten=False)
 
     network = DeepConvNet()
     network.load_params()
